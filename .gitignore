@@ -1,0 +1,17 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+node_modules/
+dist/
+build/
+.cache/
+.env
+.env.local
+*.log
+.vscode/
+.DS_Store
+Thumbs.db
