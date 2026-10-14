@@ -20,16 +20,30 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="SalesIA Enterprise API", version="1.0.0",
-              description="Gestión de ventas y analítica estadística (media, mediana, variables aleatorias, Bayes).",
-              lifespan=lifespan)
+app = FastAPI(
+    title="SalesIA Enterprise API",
+    version="1.0.0",
+    description="Gestión de ventas y analítica estadística (media, mediana, variables aleatorias, Bayes).",
+    lifespan=lifespan,
+)
 
-app.add_middleware(CORSMiddleware, allow_origins=settings.cors_list, allow_credentials=True,
-                   allow_methods=["*"], allow_headers=["*"])
+# Configuración de CORS permitiendo dominios de Vercel y comodín
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Registrar routers tanto con prefijo /api como en la raíz
+# para garantizar compatibilidad con /auth/login y /api/auth/login
 api = APIRouter(prefix="/api")
 for module in (auth, customers, products, sales, analytics, insights, reports):
     api.include_router(module.router)
+    app.include_router(module.router)
+
 app.include_router(api)
 
 
