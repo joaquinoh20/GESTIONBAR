@@ -97,7 +97,7 @@ function CustomerForm({ customer, onClose, onSaved }: { customer: Customer | nul
           <Field label="Nombre o razón social" className="full">
             <input value={form.name} onChange={set("name")} required minLength={2} autoFocus />
           </Field>
-          <Field label="DNI/RUC">
+          <Field label="Documento (DNI / RUC)">
             <input value={form.document} onChange={set("document")} />
           </Field>
           <Field label="Teléfono">
@@ -174,7 +174,7 @@ export default function Customers() {
               <thead>
                 <tr>
                   <th>Cliente</th>
-                  <th>Documento</th>
+                  <th>Dni/Ruc</th>
                   <th>Contacto</th>
                   <th>Ciudad</th>
                   <th />
