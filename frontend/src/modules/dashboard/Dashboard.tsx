@@ -60,7 +60,7 @@ export default function Dashboard() {
             </div>
             <div className="card">
               <h2 style={{ marginBottom: 12 }}>Ingresos por categoría</h2>
-              <ColumnChart data={data.by_category.map((c) => ({ label: c.name, value: c.revenue }))} color="#a9c623" />
+              <ColumnChart data={data.by_category.map((c) => ({ label: c.name, value: c.revenue }))} color="var(--c2)" />
             </div>
           </div>
 

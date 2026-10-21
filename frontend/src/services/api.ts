@@ -7,6 +7,7 @@ const FIELD_LABEL: Record<string, string> = {
   discount_pct: "Descuento", values: "Valores", favorable: "Casos favorables", total: "Total",
   p_a: "P(A)", p_b_given_a: "P(B|A)", p_b_given_not_a: "P(B|no A)", p_b: "P(B)",
   threshold: "Umbral", role: "Rol", payment_method: "Método de pago",
+  current_password: "Contraseña actual", new_password: "Nueva contraseña",
 };
 
 // Traduce los errores de validación que devuelve el servidor (vienen en inglés).
@@ -72,11 +73,15 @@ export const tokenStore = {
 interface Options {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
+  /** Usa este token en lugar del de la sesión actual (para validar otra cuenta guardada). */
+  token?: string;
+  /** Si la respuesta es 401, no cierra la sesión actual (solo lanza el error). */
+  skipAuthHandler?: boolean;
 }
 
 export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = tokenStore.get();
+  const token = opts.token ?? tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let res: Response;
@@ -100,7 +105,7 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    if (res.status === 401 && path !== "/auth/login") onUnauthorized();
+    if (res.status === 401 && path !== "/auth/login" && !opts.skipAuthHandler) onUnauthorized();
     const detail = (data as { detail?: unknown } | null)?.detail;
     let message = "Ocurrió un error inesperado";
     if (typeof detail === "string") message = detail;

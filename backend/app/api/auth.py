@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..core.database import get_db
 from ..core.security import create_access_token, hash_password, verify_password
 from ..models import AuditLog, User
-from ..schemas import LoginIn, TokenOut, UserCreate, UserOut
+from ..schemas import LoginIn, PasswordChangeIn, ProfileIn, TokenOut, UserCreate, UserOut
 from .deps import audit, get_current_user, require_roles
 
 router = APIRouter(tags=["Auth y usuarios"])
@@ -39,6 +39,27 @@ def me(user: User = Depends(get_current_user)):
     return user
 
 
+@router.put("/auth/me", response_model=UserOut)
+def update_profile(payload: ProfileIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    user.name = payload.name.strip()
+    audit(db, user, "actualizar_perfil", "user", user.id, user.name)
+    db.commit()
+    return user
+
+
+@router.post("/auth/change-password", status_code=204)
+def change_password(payload: PasswordChangeIn, db: Session = Depends(get_db),
+                    user: User = Depends(get_current_user)):
+    # 400 (no 401): un 401 haría que el frontend cierre la sesión.
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(400, "La contraseña actual no es correcta")
+    if payload.new_password == payload.current_password:
+        raise HTTPException(400, "La nueva contraseña debe ser distinta de la actual")
+    user.password_hash = hash_password(payload.new_password)
+    audit(db, user, "cambiar_contrasena", "user", user.id)
+    db.commit()
+
+
 @router.get("/users", response_model=list[UserOut])
 def list_users(db: Session = Depends(get_db), _: User = Depends(require_roles("gerente"))):
     return db.scalars(select(User).order_by(User.id)).all()
@@ -46,7 +67,10 @@ def list_users(db: Session = Depends(get_db), _: User = Depends(require_roles("g
 
 @router.post("/users", response_model=UserOut, status_code=201)
 def create_user(payload: UserCreate, db: Session = Depends(get_db),
-                admin: User = Depends(require_roles())):
+                admin: User = Depends(require_roles("gerente"))):
+    # El gerente solo crea cuentas operativas; administrador y gerente los crea el administrador.
+    if admin.role != "admin" and payload.role in ("admin", "gerente"):
+        raise HTTPException(403, "Solo el administrador puede crear cuentas de administrador o gerente")
     email = payload.email.lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(409, "Ya existe un usuario con ese correo")

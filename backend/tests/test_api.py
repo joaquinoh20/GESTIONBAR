@@ -130,3 +130,40 @@ def test_inventory_adjust(client, almacen):
     neg = client.post("/api/inventory/adjust", headers=almacen,
                       json={"product_id": product["id"], "kind": "ajuste", "quantity": -100000})
     assert neg.status_code == 400
+
+
+def test_profile_and_password_change(client, admin):
+    me = client.put("/api/auth/me", headers=admin, json={"name": "Nombre Nuevo"})
+    assert me.status_code == 200 and me.json()["name"] == "Nombre Nuevo"
+    assert client.put("/api/auth/me", headers=admin, json={"name": "x"}).status_code == 422
+    wrong = client.post("/api/auth/change-password", headers=admin,
+                        json={"current_password": "incorrecta", "new_password": "NuevaClave123"})
+    assert wrong.status_code == 400  # no 401: no debe cerrar la sesión
+    short = client.post("/api/auth/change-password", headers=admin,
+                        json={"current_password": "admin123", "new_password": "corta"})
+    assert short.status_code == 422
+    ok = client.post("/api/auth/change-password", headers=admin,
+                     json={"current_password": "admin123", "new_password": "NuevaClave123"})
+    assert ok.status_code == 204
+    assert client.post("/api/auth/login", json={"email": "admin@salesia.com", "password": "NuevaClave123"}).status_code == 200
+    assert client.post("/api/auth/login", json={"email": "admin@salesia.com", "password": "admin123"}).status_code == 401
+    # Deja la contraseña como estaba para no afectar a otras pruebas
+    back = client.post("/api/auth/change-password", headers=admin,
+                       json={"current_password": "NuevaClave123", "new_password": "admin123"})
+    assert back.status_code == 204
+
+
+def test_user_creation_permissions(client, admin, vendedor):
+    body = {"name": "Nuevo Vendedor", "email": "nuevo.vend@salesia.com", "password": "clave1234", "role": "vendedor"}
+    assert client.post("/api/users", headers=vendedor, json=body).status_code == 403
+    assert client.post("/api/users", headers=admin, json=body).status_code == 201
+    assert client.post("/api/users", headers=admin, json=body).status_code == 409
+    login = client.post("/api/auth/login", json={"email": body["email"], "password": body["password"]})
+    assert login.status_code == 200 and login.json()["user"]["role"] == "vendedor"
+    # Un gerente (no admin) solo puede crear roles operativos
+    client.post("/api/users", headers=admin, json={"name": "Gerente Dos", "email": "gerente2@salesia.com",
+                                                    "password": "clave1234", "role": "gerente"})
+    g = client.post("/api/auth/login", json={"email": "gerente2@salesia.com", "password": "clave1234"}).json()
+    gh = {"Authorization": f"Bearer {g['access_token']}"}
+    assert client.post("/api/users", headers=gh, json={**body, "email": "otro@salesia.com", "role": "admin"}).status_code == 403
+    assert client.post("/api/users", headers=gh, json={**body, "email": "otro@salesia.com", "role": "almacen"}).status_code == 201

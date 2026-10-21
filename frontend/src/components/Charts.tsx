@@ -1,5 +1,5 @@
-/* Gráficos SVG propios (sin librerías externas) con la paleta Creativa. */
-export const PALETTE = ["#1a8a80", "#a9c623", "#fad022", "#116259", "#7fa012", "#d9a900"];
+/* Gráficos SVG propios (sin librerías externas). Los colores salen de la paleta activa (variables --c1…--c6). */
+export const PALETTE = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)", "var(--c6)"];
 
 interface Point {
   label: string;
@@ -35,7 +35,7 @@ export function LineChart({ data, color = PALETTE[0] }: { data: Point[]; color?:
     <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Gráfico de líneas">
       {ticks.map((t) => (
         <g key={t}>
-          <line x1={m.left} x2={W - m.right} y1={y(t)} y2={y(t)} stroke="#e4e8dc" />
+          <line x1={m.left} x2={W - m.right} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
           <text x={m.left - 8} y={y(t) + 4} textAnchor="end">
             {compact(t)}
           </text>
@@ -45,7 +45,7 @@ export function LineChart({ data, color = PALETTE[0] }: { data: Point[]; color?:
       <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" />
       {data.map((d, i) => (
         <g key={d.label}>
-          <circle cx={x(i)} cy={y(d.value)} r={data.length > 40 ? 2 : 3.5} fill="#fff" stroke={color} strokeWidth={2}>
+          <circle cx={x(i)} cy={y(d.value)} r={data.length > 40 ? 2 : 3.5} fill="var(--surface)" stroke={color} strokeWidth={2}>
             <title>{`${d.label}: ${d.value.toLocaleString("es-PE")}`}</title>
           </circle>
           {i % labelEvery === 0 && (
@@ -77,7 +77,7 @@ export function ColumnChart({ data, color = PALETTE[0], valueLabel }: { data: Po
         const ty = m.top + ih - (t / max) * ih;
         return (
           <g key={t}>
-            <line x1={m.left} x2={W - m.right} y1={ty} y2={ty} stroke="#e4e8dc" />
+            <line x1={m.left} x2={W - m.right} y1={ty} y2={ty} stroke="var(--grid)" />
             <text x={m.left - 8} y={ty + 4} textAnchor="end">
               {compact(t)}
             </text>
@@ -160,7 +160,7 @@ export function Histogram({
     v === undefined ? null : (
       <g>
         <line x1={xOf(v)} x2={xOf(v)} y1={m.top} y2={m.top + ih} stroke={color} strokeWidth={2.5} strokeDasharray="6 4" />
-        <text x={xOf(v) + 6} y={m.top + 10 + dy} style={{ fill: "#29343a", fontWeight: 700 }}>
+        <text x={xOf(v) + 6} y={m.top + 10 + dy} style={{ fill: "var(--text)", fontWeight: 700 }}>
           {text}
         </text>
       </g>
@@ -171,7 +171,7 @@ export function Histogram({
         const ty = m.top + ih - t * ih;
         return (
           <g key={t}>
-            <line x1={m.left} x2={W - m.right} y1={ty} y2={ty} stroke="#e4e8dc" />
+            <line x1={m.left} x2={W - m.right} y1={ty} y2={ty} stroke="var(--grid)" />
             <text x={m.left - 8} y={ty + 4} textAnchor="end">
               {Math.round(t * max)}
             </text>
@@ -194,8 +194,8 @@ export function Histogram({
           </g>
         );
       })}
-      {marker(mean, "#d9a900", "Media", 0)}
-      {marker(median, "#7fa012", "Mediana", 14)}
+      {marker(mean, "var(--c6)", "Media", 0)}
+      {marker(median, "var(--c5)", "Mediana", 14)}
     </svg>
   );
 }
